@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIC Deneme Cevap Anahtarı</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f0f0f;
+            color: #ffffff;
+            margin: 0;
+            padding: 10px;
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at top right, #1a1a1a, #0f0f0f);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* Neon Efekti - Daha Az Parlak */
+        .neon-text {
+            color: #ff0000;
+            text-shadow: 0 0 3px #ff0000, 0 0 8px rgba(255, 0, 0, 0.6);
+            font-weight: 900;
+            font-style: italic;
+        }
+
+        /* Renk Temaları */
+        .header-turkce { background-color: #f39c12; }
+        .header-sosyal { background-color: #00c0ef; }
+        .header-matematik { background-color: #e011d0; }
+        .header-fen { background-color: #00a65a; }
+
+        /* Kart Stilleri */
+        .answer-column {
+            background: #ffffff;
+            color: #333;
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .column-title {
+            text-align: center;
+            font-weight: bold;
+            padding: 6px 2px;
+            color: white;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        @media (min-width: 768px) {
+            .column-title { font-size: 0.9rem; padding: 10px; }
+            .row { font-size: 0.85rem; padding: 4px 12px; }
+        }
+
+        .row:nth-child(even) {
+            background-color: #f8f8f8;
+        }
+
+        .q-num {
+            color: #bbb;
+            font-weight: 600;
+            width: 20px;
+        }
+
+        .q-ans {
+            color: #2980b9;
+            font-weight: 800;
+            text-align: right;
+        }
+
+        /* Kontrol Paneli */
+        .control-panel {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #333;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: filter 0.8s ease, opacity 0.8s ease;
+        }
+
+        textarea {
+            width: 100%;
+            background: #252525;
+            border: 1px solid #444;
+            color: #00ff00;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            resize: none;
+            font-size: 0.8rem;
+        }
+
+        .generate-btn {
+            background: linear-gradient(135deg, #ff0000 0%, #990000 100%);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
+        }
+
+        .active-mode {
+            background: #ff0000 !important;
+            color: white !important;
+        }
+
+        /* Sayfa ve Geçişler */
+        .page {
+            transition: opacity 0.8s ease-in-out, transform 0.8s ease-in-out;
+        }
+
+        .page-hidden {
+            display: none;
+            opacity: 0;
+        }
+
+        /* Akrilik Glassmorphism Efekti */
+        .blur-back {
+            filter: blur(15px) saturate(150%);
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        /* Loading Spinner Overlay - Apple Style Glass */
+        #loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            backdrop-filter: blur(20px) saturate(180%);
+            background: rgba(15, 15, 15, 0.6);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            opacity: 0;
+            transition: opacity 0.6s ease-in-out;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid #ff0000;
+            border-radius: 50%;
+            animation: spin 0.8s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+            margin-bottom: 20px;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.2);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Mobilde Yan Yana 4 Kolon */
+        .forced-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+        }
+
+        @media (min-width: 768px) {
+            .forced-grid {
+                gap: 15px;
+            }
+        }
+
+        #page-output {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 10;
+            opacity: 0;
+            transform: translateY(20px);
+            pointer-events: none;
+        }
+
+        #page-output.active {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Yükleme Ekranı Overlay -->
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <p class="text-white font-bold tracking-[0.3em] text-xs opacity-80 animate-pulse">Oluşturuluyor...</p>
+    </div>
+
+    <div class="container py-4">
+        
+        <!-- SAYFA 1: AYARLAR (ARKADA KALACAK OLAN) -->
+        <div id="page-input" class="page">
+            <div class="control-panel">
+                <h2 class="text-xl font-bold mb-6 text-center text-gray-300 tracking-widest uppercase">⚙️ Yapılandırma</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-2 uppercase">Deneme Başlığı</label>
+                        <input type="text" id="input-title" value="TOPRAK TG202606" class="w-full bg-gray-800 border border-gray-700 p-3 rounded text-white text-sm focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-2 uppercase">Sınav Türü</label>
+                        <div class="flex gap-2">
+                            <button id="mode-tyt" onclick="setMode('TYT')" class="flex-1 bg-gray-800 p-3 rounded font-bold text-sm transition">TYT</button>
+                            <button id="mode-ayt" onclick="setMode('AYT')" class="flex-1 bg-gray-800 p-3 rounded font-bold text-sm active-mode transition">AYT</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-2 uppercase">Kitapçık Türü</label>
+                        <div class="flex gap-1">
+                            <button onclick="setBooklet('A')" class="booklet-btn flex-1 bg-gray-800 p-3 rounded font-bold text-sm active-mode" id="btn-A">A</button>
+                            <button onclick="setBooklet('B')" class="booklet-btn flex-1 bg-gray-800 p-3 rounded font-bold text-sm" id="btn-B">B</button>
+                            <button onclick="setBooklet('C')" class="booklet-btn flex-1 bg-gray-800 p-3 rounded font-bold text-sm" id="btn-C">C</button>
+                            <button onclick="setBooklet('D')" class="booklet-btn flex-1 bg-gray-800 p-3 rounded font-bold text-sm" id="btn-D">D</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+                    <div>
+                        <label class="block text-[10px] font-bold text-orange-500 mb-1 uppercase">Türkçe</label>
+                        <textarea id="ans-turkce" rows="4" placeholder="ABC..."></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-cyan-500 mb-1 uppercase">Sosyal</label>
+                        <textarea id="ans-sosyal" rows="4" placeholder="ABC..."></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-purple-500 mb-1 uppercase">Matematik</label>
+                        <textarea id="ans-matematik" rows="4" placeholder="ABC..."></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-green-500 mb-1 uppercase">Fen</label>
+                        <textarea id="ans-fen" rows="4" placeholder="ABC..."></textarea>
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <button class="generate-btn w-full md:w-auto" onclick="generateWithAcrylicEffect()">Cevap Anahtarını Oluştur</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SAYFA 2: ÇIKTI (ÜSTE GELECEK OLAN) -->
+        <div id="page-output" class="page">
+            <div class="flex justify-between items-center mb-6">
+                <button onclick="goBackSmoothly()" class="text-xs bg-white/10 hover:bg-white/20 text-white px-5 py-2 rounded-full border border-white/10 backdrop-blur-md flex items-center gap-2 transition active:scale-95 shadow-xl">
+                    <span>←</span> Ayarları Düzenle
+                </button>
+            </div>
+
+            <div class="bg-black/40 backdrop-blur-xl border border-white/10 p-4 md:p-8 rounded-2xl shadow-2xl">
+                <header class="flex justify-between items-end mb-8 border-b border-gray-800 pb-6">
+                    <div class="flex-1">
+                        <h1 id="display-title" class="text-lg md:text-3xl font-black text-orange-500 tracking-tighter uppercase leading-none">TOPRAK TG202606 AYT</h1>
+                        <p id="display-booklet" class="text-[10px] md:text-base font-bold text-orange-600 mt-2">A KİTAPÇIĞI</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="neon-text text-2xl md:text-4xl">FIC Deneme</span>
+                    </div>
+                </header>
+
+                <div class="forced-grid" id="grid-container">
+                    <!-- JS ile dolacak -->
+                </div>
+                
+                <footer class="mt-10 text-center text-[10px] text-gray-500 tracking-widest uppercase pt-6 border-t border-gray-900/50">
+                    FIC DENEME
+                </footer>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'AYT';
+        let currentBooklet = 'A';
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('mode-tyt').classList.toggle('active-mode', mode === 'TYT');
+            document.getElementById('mode-ayt').classList.toggle('active-mode', mode === 'AYT');
+        }
+
+        function setBooklet(type) {
+            currentBooklet = type;
+            document.querySelectorAll('.booklet-btn').forEach(btn => btn.classList.remove('active-mode'));
+            document.getElementById('btn-' + type).classList.add('active-mode');
+        }
+
+        // --- APPLE AKRİLİK GEÇİŞ SİHRİ ---
+        function generateWithAcrylicEffect() {
+            const pageInput = document.getElementById('page-input');
+            const loader = document.getElementById('loading-overlay');
+            const pageOutput = document.getElementById('page-output');
+
+            // 1. Ayarlar sayfasını bulanıklaştır (Blur & Fade Out)
+            pageInput.classList.add('blur-back');
+            
+            // 2. Loading'i yumuşakça getir
+            loader.style.display = 'flex';
+            setTimeout(() => loader.style.opacity = '1', 50);
+
+            setTimeout(() => {
+                // Verileri arkada hazırla
+                prepareGridData();
+
+                // 3. Loading'i yavaşça kapat
+                loader.style.opacity = '0';
+
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    
+                    // 4. Çıktı sayfasını üste yerleştir (Glassmorphism katmanı)
+                    pageOutput.classList.add('active');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }, 600);
+
+            }, 1800); // Gerçekçi akrilik işleme süresi alicimmmm
+        }
+
+        function goBackSmoothly() {
+            const pageInput = document.getElementById('page-input');
+            const pageOutput = document.getElementById('page-output');
+            
+            pageOutput.classList.remove('active');
+            
+            setTimeout(() => {
+                pageInput.classList.remove('blur-back');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }, 400);
+        }
+
+        function prepareGridData() {
+            const titleInput = document.getElementById('input-title').value;
+            const gridContainer = document.getElementById('grid-container');
+            
+            document.getElementById('display-title').innerText = `${titleInput} ${currentMode}`;
+            document.getElementById('display-booklet').innerText = `${currentBooklet} KİTAPÇIĞI`;
+            
+            gridContainer.innerHTML = '';
+
+            const config = {
+                TYT: [
+                    { id: 'ans-turkce', name: 'TÜRKÇE', count: 40, color: 'header-turkce' },
+                    { id: 'ans-sosyal', name: 'SOSYAL', count: 20, color: 'header-sosyal' },
+                    { id: 'ans-matematik', name: 'MATEMATİK', count: 40, color: 'header-matematik' },
+                    { id: 'ans-fen', name: 'FEN', count: 20, color: 'header-fen' }
+                ],
+                AYT: [
+                    { id: 'ans-turkce', name: 'TÜRKÇE', count: 40, color: 'header-turkce' },
+                    { id: 'ans-sosyal', name: 'SOSYAL', count: 40, color: 'header-sosyal' },
+                    { id: 'ans-matematik', name: 'MATEMATİK', count: 40, color: 'header-matematik' },
+                    { id: 'ans-fen', name: 'FEN', count: 40, color: 'header-fen' }
+                ]
+            };
+
+            config[currentMode].forEach(branch => {
+                const col = document.createElement('div');
+                col.className = 'answer-column';
+
+                const header = document.createElement('div');
+                header.className = `column-title ${branch.color}`;
+                header.innerText = branch.name;
+                col.appendChild(header);
+
+                const listDiv = document.createElement('div');
+                listDiv.className = 'flex flex-col';
+
+                const rawAnswers = document.getElementById(branch.id).value.toUpperCase().replace(/\s/g, '');
+
+                for (let i = 1; i <= branch.count; i++) {
+                    const row = document.createElement('div');
+                    row.className = 'row';
+                    
+                    let char = rawAnswers[i - 1] || "-";
+                    if (char === 'X' || char === '') char = "-";
+
+                    row.innerHTML = `
+                        <span class="q-num">${i}.</span>
+                        <span class="q-ans">${char}</span>
+                    `;
+                    listDiv.appendChild(row);
+                }
+
+                col.appendChild(listDiv);
+                gridContainer.appendChild(col);
+            });
+        }
+    </script>
+</body>
+</html>
