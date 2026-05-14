@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIC Deneme Cevap Anahtarı</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Playfair+Display:wght@700&family=Montserrat:wght@400;700;900&family=Courier+Prime&family=Roboto+Mono:wght@700&family=Poppins:wght@300;600;800&display=swap');
+
+        /* Temel Ayarlar */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f0f0f;
+            color: #ffffff;
+            margin: 0;
+            padding: 10px;
+            overflow-x: hidden;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; position: relative; }
+
+        /* Neon Logo */
+        .neon-text {
+            color: #ff0000;
+            text-shadow: 0 0 3px #ff0000, 0 0 8px rgba(255, 0, 0, 0.4);
+            font-weight: 900;
+            font-style: italic;
+        }
+
+        /* Branş Sütunları - Naif ve İnce */
+        .answer-column {
+            background: #ffffff;
+            color: #333;
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            max-width: 180px; /* Sütunlar biraz daha daraltıldı */
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .column-title {
+            text-align: center;
+            font-weight: bold;
+            padding: 6px 2px;
+            color: white;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.5px;
+        }
+
+        .row {
+            display: flex;
+            justify-content: flex-start; /* Cevaplar sola yaklaştırıldı */
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        @media (min-width: 768px) { .row { font-size: 0.8rem; padding: 4px 10px; } }
+
+        .row:nth-child(even) { background-color: #f8f8f8; }
+        .q-num { color: #bbb; font-weight: 600; width: 22px; flex-shrink: 0; }
+        .q-ans { color: #2980b9; font-weight: 800; margin-left: 2px; }
+
+        /* Slicer */
+        .slicer {
+            height: 1px;
+            width: 100%;
+            margin: 20px 0;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.15), transparent);
+            position: relative;
+        }
+
+        /* Dinamik Grid */
+        .forced-grid { 
+            display: grid; 
+            gap: 8px; 
+            justify-content: center;
+        }
+
+        /* Sayfa Geçişleri */
+        .page { transition: opacity 0.6s ease-in-out; opacity: 0; display: none; }
+        .page-active { display: block; opacity: 1; }
+
+        /* Loading */
+        #loading-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #0f0f0f; z-index: 9999; justify-content: center; align-items: center;
+            flex-direction: column; opacity: 0; transition: opacity 0.5s ease-in-out;
+        }
+        .spinner { width: 60px; height: 60px; border: 5px solid #222; border-top: 5px solid #ff0000; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Panel Stilleri */
+        .control-panel { background: #1a1a1a; padding: 20px; border-radius: 12px; border: 1px solid #333; }
+        textarea, .input-field { width: 100%; background: #252525; border: 1px solid #444; color: #00ff00; padding: 8px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 0.8rem; }
+        .input-field { color: white; font-family: 'Inter', sans-serif; margin-bottom: 5px; }
+        .active-mode { background: #ff0000 !important; color: white !important; }
+
+        /* Switch Stili */
+        .switch { position: relative; display: inline-block; width: 34px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #444; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #ff0000; }
+        input:checked + .slider:before { transform: translateX(14px); }
+
+        /* TEMALARIN ÖZEL RENKLERİ */
+        /* Midnight Branşları */
+        .theme-midnight .header-1 { background-color: #312e81 !important; }
+        .theme-midnight .header-2 { background-color: #1e40af !important; }
+        .theme-midnight .header-3 { background-color: #4c1d95 !important; }
+        .theme-midnight .header-4 { background-color: #0891b2 !important; }
+        
+        /* Platinum Branşları */
+        .theme-platinum .header-1 { background-color: #4338ca !important; }
+        .theme-platinum .header-2 { background-color: #0d9488 !important; }
+        .theme-platinum .header-3 { background-color: #be185d !important; }
+        .theme-platinum .header-4 { background-color: #0369a1 !important; }
+
+        /* TEMA TANIMLARI */
+        .theme-sapphire #capture-area { background-color: #041421; font-family: 'Montserrat', sans-serif; }
+        .theme-sapphire .answer-column { background: #0a2339; color: #e0e0e0; border: 1px solid #1a3a5a; }
+        .theme-sapphire .row { border-color: #1a3a5a; }
+        .theme-sapphire .row:nth-child(even) { background-color: #0c2a44; }
+        .theme-sapphire .q-ans { color: #00d2ff; }
+
+        .theme-rosegold #capture-area { background-color: #4d1d36; font-family: 'Poppins', sans-serif; }
+        .theme-rosegold .answer-column { background: #fff1f6; color: #702444; border: 1px solid #f8bbd0; }
+        .theme-rosegold .row { border-color: #f8bbd0; }
+        .theme-rosegold .row:nth-child(even) { background-color: #fce4ec; }
+        .theme-rosegold .q-ans { color: #d81b60; }
+
+        .theme-midnight #capture-area { background-color: #020617; font-family: 'Inter', sans-serif; }
+        .theme-midnight .answer-column { background: #1e293b; color: #f8fafc; border: 1px solid #334155; }
+        .theme-midnight .row { border-color: #334155; }
+        .theme-midnight .row:nth-child(even) { background-color: #0f172a; }
+        .theme-midnight .q-ans { color: #38bdf8; }
+
+        .theme-platinum #capture-area { background-color: #111111; font-family: 'Montserrat', sans-serif; }
+        .theme-platinum .answer-column { background: #fdfdfd; color: #1a1a1a; border: 1px solid #e5e7eb; }
+        .theme-platinum .row { border-color: #f3f4f6; }
+        .theme-platinum .row:nth-child(even) { background-color: #f9fafb; }
+        .theme-platinum .q-ans { color: #1e293b; text-shadow: none; font-weight: 900; }
+
+        .theme-minimal #capture-area { background-color: #ffffff; font-family: 'Inter', sans-serif; }
+        .theme-minimal .answer-column { background: #fcfcfc; color: #000; border: 1px solid #eee; box-shadow: none; }
+        .theme-minimal .row { border-color: #f0f0f0; }
+        .theme-minimal .q-ans { color: #000; font-weight: 900; }
+        .theme-minimal .neon-text { color: #000; text-shadow: none; }
+        .theme-minimal h1 { color: #000 !important; }
+
+        /* OLUŞTUR BUTONU */
+        .generate-btn {
+            background: #ff0000; color: white; padding: 14px 40px; border-radius: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 3px; transition: all 0.3s; cursor: pointer; border: 2px solid #ff0000; box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
+        }
+        .generate-btn:hover { background: #cc0000; transform: scale(1.02); }
+
+        /* Tema Önizleme Kartları */
+        .theme-preview-card {
+            width: 100%; max-width: 140px; height: 110px; border-radius: 12px; padding: 8px; cursor: pointer; transition: 0.4s; border: 2px solid transparent; display: flex; flex-direction: column; gap: 5px; position: relative; overflow: hidden; scale: 0.9;
+        }
+        .theme-preview-card.active { border-color: #ff0000; box-shadow: 0 10px 20px rgba(255, 0, 0, 0.2); scale: 1; }
+
+        .mini-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; flex: 1; }
+        .mini-col { border-radius: 1px; display: flex; flex-direction: column; overflow: hidden; }
+        .mini-head { height: 4px; width: 100%; background: #999; }
+        .mini-row { font-size: 5px; padding: 1px; display: flex; justify-content: space-between; align-items: center; background: white; color: #333; }
+        
+        /* Önizleme Spesifik Renk Fixleri */
+        .preview-default { background: #0f0f0f; }
+        .preview-default .h-1 { background-color: #f39c12; } .preview-default .h-2 { background-color: #00c0ef; } .preview-default .h-3 { background-color: #e011d0; } .preview-default .h-4 { background-color: #00a65a; }
+
+        .preview-sapphire { background: #041421; }
+        .preview-sapphire .mini-row { background: #0a2339; color: #fff; }
+        .preview-sapphire .h-1 { background-color: #f39c12; } .preview-sapphire .h-2 { background-color: #00c0ef; } .preview-sapphire .h-3 { background-color: #e011d0; } .preview-sapphire .h-4 { background-color: #00a65a; }
+
+        .preview-rosegold { background: #4d1d36; }
+        .preview-rosegold .mini-row { background: #fff1f6; color: #702444; }
+        .preview-rosegold .h-1 { background-color: #f39c12; } .preview-rosegold .h-2 { background-color: #00c0ef; } .preview-rosegold .h-3 { background-color: #e011d0; } .preview-rosegold .h-4 { background-color: #00a65a; }
+
+        .preview-midnight { background: #020617; }
+        .preview-midnight .mini-row { background: #1e293b; color: #fff; }
+        .preview-midnight .h-1 { background-color: #312e81; } .preview-midnight .h-2 { background-color: #1e40af; } .preview-midnight .h-3 { background-color: #4c1d95; } .preview-midnight .h-4 { background-color: #0891b2; }
+
+        .preview-platinum { background: #111111; }
+        .preview-platinum .mini-row { background: #fdfdfd; color: #1a1a1a; }
+        .preview-platinum .h-1 { background-color: #4338ca; } .preview-platinum .h-2 { background-color: #0d9488; } .preview-platinum .h-3 { background-color: #be185d; } .preview-platinum .h-4 { background-color: #0369a1; }
+
+        .preview-minimal { background: #f5f5f5; }
+        .preview-minimal .mini-row { background: #fff; color: #000; }
+
+        /* Dropdown */
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-content { display: none; position: absolute; right: 0; background-color: #1a1a1a; min-width: 160px; z-index: 50; border-radius: 8px; border: 1px solid #333; overflow: hidden; margin-top: 5px; }
+        .dropdown-content button { color: #ccc; padding: 12px 16px; width: 100%; text-align: left; font-size: 12px; font-weight: bold; transition: 0.2s; }
+        .dropdown-content button:hover { background-color: #333; color: #fff; }
+        .show { display: block; }
+
+        /* Yakalama Modu */
+        .capture-mode-active { width: 1000px !important; min-width: 1000px !important; padding: 30px !important; }
+        .capture-mode-active .answer-column { border: 1px solid #eee !important; box-shadow: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <p class="text-red-600 font-bold tracking-[0.4em] text-xs animate-pulse">Sunucuya yönlendiriliyor...</p>
+    </div>
+
+    <div class="container py-4">
+        <!-- AYARLAR SAYFASI -->
+        <div id="page-input" class="page page-active" style="opacity: 1;">
+            <div class="control-panel">
+                <div class="flex flex-wrap justify-between items-center mb-6 gap-2">
+                    <h2 class="text-xl font-bold text-gray-400 tracking-widest uppercase">⚙️ YAPILANDIRMA</h2>
+                    <div class="flex gap-2">
+                        <button onclick="toggleBranchSettings()" class="text-[10px] bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1 rounded border border-gray-700 transition">🔧 Branş Yönetimi</button>
+                        <button onclick="toggleThemeSettings()" class="text-[10px] bg-red-900/30 hover:bg-red-900/50 text-red-300 px-3 py-1 rounded border border-red-800 transition">🎨 Temalar</button>
+                    </div>
+                </div>
+
+                <div id="branch-settings" class="hidden mb-6 p-4 bg-black/20 rounded-lg border border-white/5">
+                    <p class="text-[10px] font-bold text-gray-500 mb-4 uppercase">Branş İsimleri ve Durumları</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="branch-item flex flex-col gap-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[9px] text-orange-500 font-bold">1. BRANŞ</span>
+                                <label class="switch"><input type="checkbox" id="active-1" checked onchange="syncLabels()"><span class="slider"></span></label>
+                            </div>
+                            <input type="text" id="name-1" value="TÜRKÇE" class="input-field text-xs" oninput="syncLabels()">
+                        </div>
+                        <div class="branch-item flex flex-col gap-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[9px] text-cyan-500 font-bold">2. BRANŞ</span>
+                                <label class="switch"><input type="checkbox" id="active-2" checked onchange="syncLabels()"><span class="slider"></span></label>
+                            </div>
+                            <input type="text" id="name-2" value="SOSYAL" class="input-field text-xs" oninput="syncLabels()">
+                        </div>
+                        <div class="branch-item flex flex-col gap-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[9px] text-purple-500 font-bold">3. BRANŞ</span>
+                                <label class="switch"><input type="checkbox" id="active-3" checked onchange="syncLabels()"><span class="slider"></span></label>
+                            </div>
+                            <input type="text" id="name-3" value="MATEMATİK" class="input-field text-xs" oninput="syncLabels()">
+                        </div>
+                        <div class="branch-item flex flex-col gap-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[9px] text-green-500 font-bold">4. BRANŞ</span>
+                                <label class="switch"><input type="checkbox" id="active-4" checked onchange="syncLabels()"><span class="slider"></span></label>
+                            </div>
+                            <input type="text" id="name-4" value="FEN" class="input-field text-xs" oninput="syncLabels()">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="theme-settings" class="hidden mb-6 p-4 bg-black/20 rounded-lg border border-white/5">
+                    <p class="text-[10px] font-bold text-gray-500 mb-4 uppercase text-center">Bir Elit Tema Seç</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                        <!-- TEMA ÖNİZLEMELERİ -->
+                        <div onclick="setTheme('default')" id="t-default" class="theme-preview-card active preview-default">
+                            <span class="text-[8px] text-gray-400 text-center font-bold uppercase">Standart</span>
+                            <div class="mini-grid">
+                                <div class="mini-col"><div class="mini-head h-1"></div><div class="mini-row"><span>1</span><span>A</span></div></div>
+                                <div class="mini-col"><div class="mini-head h-2"></div><div class="mini-row"><span>1</span><span>B</span></div></div>
+                                <div class="mini-col"><div class="mini-head h-3"></div><div class="mini-row"><span>1</span><span>C</span></div></div>
+                                <div class="mini-col"><div class="mini-head h-4"></div><div class="mini-row"><span>1</span><span>D</span></div></div>
+                            </div>
+                        </div>
+                        <div onclick="setTheme('sapphire')" id="t-sapphire" class="theme-preview-card preview-sapphire">
+                            <span class="text-[8px] text-blue-400 text-center font-bold uppercase">Safir</span>
+                            <div class="mini-grid">
+                                <div class="mini-col"><div class="mini-head h-1"></div><div class="mini-row"><span>1</span><span>A</span></div></div>
+                                <div class="mini-col"><div class="mini-head h-2"></div><div class="mini-row"><span>1</span><span>B</span></div></div>
+                                <div class="mini-col"><div class="mini-head h-3"></div><div class="mini-row"><span>1</span><span>C</span></div></div>
+                                <div class="mini-col"><div class="mini-head h-4"></div><div class="mini-row"><span>1</span><span>D</span></div></div>
+                            </div>
+                        </div>
+                        <div onclick="setTheme('rosegold')" id="t-rosegold" class="theme-preview-card preview-rosegold">
+                            <span class="text-[8px] text-pink-300 text-center font-bold uppercase">Gül Altın</span>
+                            <div class="mini-grid">
+                                <div class="mini-col"><div class="mini-head h-1"></div><div class="mini-row"><span>1</span><span>A</span></div></div>
+                                <div class="mini-col"><div class="mini-head h-2"></div><div class="mini-row"><span>1</span><span>B</span></div></div>
+                                <div class="mini-col"><div class="mini-head h-3"></div><div class="mini-row"><span>1</span><span>C</span></div></div>
+                                <div class="mini-col"><div class="mini-head h-4"></div><div class="mini-row"><span>1</span><span>D</span></div></div>
+                            </div>
+                        </div>
+                        <div onclick="setTheme('midnight')" id="t-midnight" class="theme-preview-card preview-midnight">
+                            <span class="text-[8px] text-cyan-400 text-center font-bold uppercase">Gece Mavisi</span>
+                            <div class="mini-grid">
+                                <div class="mini-col"><div class="mini-head h-1"></div><div class="mini-row"><span>1</span><span>A</span></div></div>
+                                <div class="mini-col"><div class="mini-head h-2"></div><div class="mini-row"><span>1</span><span>B</span></div></div>
+                                <div class="mini-col"><div class="mini-head h-3"></div><div class="mini-row"><span>1</span><span>C</span></div></div>
+                                <div class="mini-col"><div class="mini-head h-4"></div><div class="mini-row"><span>1</span><span>D</span></div></div>
+                            </div>
+                        </div>
+                        <div onclick="setTheme('platinum')" id="t-platinum" class="theme-preview-card preview-platinum">
+                            <span class="text-[8px] text-gray-200 text-center font-bold uppercase">Platin</span>
+                            <div class="mini-grid">
+                                <div class="mini-col"><div class="mini-head h-1"></div><div class="mini-row"><span>1</span><span>A</span></div></div>
+                                <div class="mini-col"><div class="mini-head h-2"></div><div class="mini-row"><span>1</span><span>B</span></div></div>
+                                <div class="mini-col"><div class="mini-head h-3"></div><div class="mini-row"><span>1</span><span>C</span></div></div>
+                                <div class="mini-col"><div class="mini-head h-4"></div><div class="mini-row"><span>1</span><span>D</span></div></div>
+                            </div>
+                        </div>
+                        <div onclick="setTheme('minimal')" id="t-minimal" class="theme-preview-card preview-minimal">
+                            <span class="text-[8px] text-gray-800 text-center font-bold uppercase">Minimal</span>
+                            <div class="mini-grid">
+                                <div class="mini-col"><div class="mini-head h-1"></div><div class="mini-row"><span>1</span><span>A</span></div></div>
+                                <div class="mini-col"><div class="mini-head h-2"></div><div class="mini-row"><span>1</span><span>B</span></div></div>
+                                <div class="mini-col"><div class="mini-head h-3"></div><div class="mini-row"><span>1</span><span>C</span></div></div>
+                                <div class="mini-col"><div class="mini-head h-4"></div><div class="mini-row"><span>1</span><span>D</span></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div><label class="block text-xs font-bold text-gray-500 mb-2 uppercase">Deneme Başlığı</label><input type="text" id="input-title" value="TOPRAK TG202606" class="w-full bg-gray-800 border border-gray-700 p-3 rounded text-white text-sm focus:outline-none focus:border-red-600"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 mb-2 uppercase">Sınav Türü</label><div class="flex gap-2"><button id="mode-tyt" onclick="setMode('TYT')" class="flex-1 bg-gray-800 p-3 rounded font-bold text-sm transition">TYT</button><button id="mode-ayt" onclick="setMode('AYT')" class="flex-1 bg-gray-800 p-3 rounded font-bold text-sm active-mode transition">AYT</button></div></div>
+                    <div><label class="block text-xs font-bold text-gray-500 mb-2 uppercase">Kitapçık</label><div class="flex gap-1"><button onclick="setBooklet('A')" class="booklet-btn flex-1 bg-gray-800 p-3 rounded font-bold text-sm active-mode" id="btn-A">A</button><button onclick="setBooklet('B')" class="booklet-btn flex-1 bg-gray-800 p-3 rounded font-bold text-sm" id="btn-B">B</button><button onclick="setBooklet('C')" class="booklet-btn flex-1 bg-gray-800 p-3 rounded font-bold text-sm" id="btn-C">C</button><button onclick="setBooklet('D')" class="booklet-btn flex-1 bg-gray-800 p-3 rounded font-bold text-sm" id="btn-D">D</button></div></div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8" id="input-container">
+                    <div id="box-1"><label id="label-1" class="block text-[10px] font-bold text-orange-500 mb-1 uppercase">TÜRKÇE</label><textarea id="ans-1" rows="4" placeholder="ABC..."></textarea></div>
+                    <div id="box-2"><label id="label-2" class="block text-[10px] font-bold text-cyan-500 mb-1 uppercase">SOSYAL</label><textarea id="ans-2" rows="4" placeholder="ABC..."></textarea></div>
+                    <div id="box-3"><label id="label-3" class="block text-[10px] font-bold text-purple-500 mb-1 uppercase">MATEMATİK</label><textarea id="ans-3" rows="4" placeholder="ABC..."></textarea></div>
+                    <div id="box-4"><label id="label-4" class="block text-[10px] font-bold text-green-500 mb-1 uppercase">FEN</label><textarea id="ans-4" rows="4" placeholder="ABC..."></textarea></div>
+                </div>
+
+                <div class="text-center"><button class="generate-btn w-full md:w-auto" onclick="startTransition()">Cevap Anahtarını Oluştur</button></div>
+            </div>
+        </div>
+
+        <div id="page-output" class="page">
+            <div class="flex flex-wrap justify-between items-center mb-6 gap-2 no-capture">
+                <button onclick="reverseTransition()" class="text-xs bg-gray-900 hover:bg-gray-800 text-white px-5 py-2 rounded-full border border-gray-700 flex items-center gap-2 transition active:scale-95"><span>←</span> Ayarları Düzenle</button>
+                <div class="dropdown">
+                    <button id="download-btn" onclick="toggleDropdown()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full border border-red-500 flex items-center gap-2 transition active:scale-95 font-bold shadow-xl"><span>📥</span> Anahtarı İndir ▼</button>
+                    <div id="download-menu" class="dropdown-content">
+                        <button onclick="processDownload('png')">🖼️ PNG Olarak Kaydet</button>
+                        <button onclick="processDownload('jpg')">📷 JPG Olarak Kaydet</button>
+                        <button onclick="processDownload('pdf')">📄 PDF Belgesi Yap</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="capture-container" class="flex justify-center">
+                <div id="capture-area" class="p-6 rounded-2xl transition-all duration-300">
+                    <header class="flex justify-between items-end pb-2">
+                        <div class="flex-1">
+                            <h1 id="display-title" class="text-lg md:text-3xl font-black text-orange-500 tracking-tighter uppercase leading-none"></h1>
+                            <p id="display-booklet" class="text-[10px] md:text-base font-bold text-orange-600 mt-2"></p>
+                        </div>
+                        <div class="text-right"><span class="neon-text text-2xl md:text-4xl">FIC Deneme</span></div>
+                    </header>
+                    <div class="slicer"></div>
+                    <div class="forced-grid" id="grid-container"></div>
+                    <footer class="mt-10 text-center text-[10px] text-gray-500/50 tracking-widest uppercase pt-6 border-t border-gray-800/20">FIC Deneme - CevapAnahtarı</footer>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'AYT';
+        let currentBooklet = 'A';
+        let currentTheme = 'default';
+
+        function toggleDropdown() { document.getElementById("download-menu").classList.toggle("show"); }
+        window.onclick = function(event) { if (!event.target.matches('#download-btn')) { const dropdowns = document.getElementsByClassName("dropdown-content"); for (let i = 0; i < dropdowns.length; i++) { if (dropdowns[i].classList.contains('show')) dropdowns[i].classList.remove('show'); } } }
+
+        function setTheme(theme) { currentTheme = theme; document.querySelectorAll('.theme-preview-card').forEach(card => card.classList.remove('active')); document.getElementById('t-' + theme).classList.add('active'); }
+        function toggleBranchSettings() { document.getElementById('branch-settings').classList.toggle('hidden'); }
+        function toggleThemeSettings() { document.getElementById('theme-settings').classList.toggle('hidden'); }
+
+        function syncLabels() {
+            for(let i=1; i<=4; i++) {
+                const isActive = document.getElementById('active-'+i).checked;
+                const name = document.getElementById('name-'+i).value || '-';
+                const label = document.getElementById('label-'+i);
+                if(label) label.innerText = name;
+                const box = document.getElementById('box-'+i);
+                if(box) box.style.display = isActive ? 'block' : 'none';
+            }
+        }
+
+        window.onload = function() {
+            syncLabels();
+        };
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('mode-tyt').classList.toggle('active-mode', mode === 'TYT');
+            document.getElementById('mode-ayt').classList.toggle('active-mode', mode === 'AYT');
+        }
+
+        function setBooklet(type) {
+            currentBooklet = type;
+            document.querySelectorAll('.booklet-btn').forEach(btn => btn.classList.remove('active-mode'));
+            document.getElementById('btn-' + type).classList.add('active-mode');
+        }
+
+        function startTransition() {
+            const pageInput = document.getElementById('page-input');
+            const loader = document.getElementById('loading-overlay');
+            const pageOutput = document.getElementById('page-output');
+            pageInput.style.opacity = '0';
+            setTimeout(() => {
+                pageInput.classList.remove('page-active');
+                loader.style.display = 'flex';
+                setTimeout(() => loader.style.opacity = '1', 50);
+                setTimeout(() => {
+                    renderAnswers();
+                    loader.style.opacity = '0';
+                    setTimeout(() => {
+                        loader.style.display = 'none';
+                        pageOutput.classList.add('page-active');
+                        pageOutput.className = 'page page-active theme-' + currentTheme;
+                        setTimeout(() => { pageOutput.style.opacity = '1'; }, 50);
+                        window.scrollTo(0,0);
+                    }, 500);
+                }, 1200);
+            }, 500);
+        }
+
+        function reverseTransition() {
+            const pageInput = document.getElementById('page-input');
+            const pageOutput = document.getElementById('page-output');
+            pageOutput.style.opacity = '0';
+            setTimeout(() => {
+                pageOutput.classList.remove('page-active');
+                pageInput.classList.add('page-active');
+                setTimeout(() => pageInput.style.opacity = '1', 50);
+                window.scrollTo(0,0);
+            }, 500);
+        }
+
+        function renderAnswers() {
+            const titleInput = document.getElementById('input-title').value;
+            const gridContainer = document.getElementById('grid-container');
+            document.getElementById('display-title').innerText = `${titleInput} ${currentMode}`;
+            document.getElementById('display-booklet').innerText = `${currentBooklet} KİTAPÇIĞI`;
+            gridContainer.innerHTML = '';
+            
+            const activeBranches = [];
+            for(let i=1; i<=4; i++) {
+                if(document.getElementById('active-'+i).checked) {
+                    activeBranches.push({
+                        id: i,
+                        name: document.getElementById('name-'+i).value,
+                        colorClass: `header-${i}`,
+                        count: (currentMode === 'TYT' && (i === 2 || i === 4)) ? 20 : 40
+                    });
+                }
+            }
+
+            // Grid kolon ayarı
+            gridContainer.style.gridTemplateColumns = `repeat(${activeBranches.length}, 1fr)`;
+            if(window.innerWidth < 768) {
+                 gridContainer.style.gridTemplateColumns = activeBranches.length <= 2 ? `repeat(${activeBranches.length}, 1fr)` : `repeat(2, 1fr)`;
+            }
+
+            // Branşların Renkleri İçin Sabitler (Standart Tema İçin)
+            const standardColors = ['#f39c12', '#00c0ef', '#e011d0', '#00a65a'];
+
+            activeBranches.forEach(branch => {
+                const col = document.createElement('div');
+                col.className = 'answer-column';
+                const header = document.createElement('div');
+                // Tema bazlı header class'ı (header-1, header-2 vb.)
+                header.className = `column-title ${branch.colorClass}`;
+                
+                // Standart tema için inline stil (CSS'deki header-turkce yerine daha dinamik)
+                if(currentTheme === 'default' || currentTheme === 'minimal' || currentTheme === 'rosegold' || currentTheme === 'sapphire') {
+                    header.style.backgroundColor = standardColors[branch.id - 1];
+                }
+                
+                header.innerText = branch.name;
+                col.appendChild(header);
+
+                const list = document.createElement('div');
+                list.className = 'flex flex-col';
+                const raw = document.getElementById('ans-' + branch.id).value.toUpperCase().replace(/\s/g, '');
+                for (let i = 1; i <= branch.count; i++) {
+                    const row = document.createElement('div');
+                    row.className = 'row';
+                    let char = raw[i - 1] || "-";
+                    if (char === 'X' || char === '') char = "-";
+                    row.innerHTML = `<span class="q-num">${i}.</span><span class="q-ans">${char}</span>`;
+                    list.appendChild(row);
+                }
+                col.appendChild(list);
+                gridContainer.appendChild(col);
+            });
+        }
+
+        async function processDownload(format) {
+            const area = document.getElementById('capture-area');
+            const title = document.getElementById('input-title').value || 'FIC_Anahtar';
+            const loader = document.getElementById('loading-overlay');
+            loader.style.display = 'flex';
+            loader.style.opacity = '1';
+            area.classList.add('capture-mode-active');
+
+            const activeCount = [...document.querySelectorAll('[id^="active-"]')].filter(i => i.checked).length;
+            area.style.width = (activeCount * 220 + 60) + 'px';
+
+            let bgColor = '#0f0f0f';
+            if (currentTheme === 'minimal') bgColor = '#ffffff';
+            else if (currentTheme === 'platinum') bgColor = '#111111';
+            else if (currentTheme === 'rosegold') bgColor = '#4d1d36';
+            else if (currentTheme === 'midnight') bgColor = '#020617';
+            else if (currentTheme === 'sapphire') bgColor = '#041421';
+
+            await new Promise(r => setTimeout(r, 200));
+            try {
+                const canvas = await html2canvas(area, { backgroundColor: bgColor, scale: 3, useCORS: true });
+                if (format === 'pdf') {
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF('l', 'mm', 'a4');
+                    const imgData = canvas.toDataURL('image/jpeg', 0.9);
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+                    pdf.save(`${title}_${currentMode}.pdf`);
+                } else {
+                    const link = document.createElement('a');
+                    link.download = `${title}_${currentMode}.${format}`;
+                    link.href = canvas.toDataURL(`image/${format === 'png' ? 'png' : 'jpeg'}`, 0.9);
+                    link.click();
+                }
+            } catch (err) { console.error(err); } finally {
+                area.classList.remove('capture-mode-active');
+                area.style.width = '';
+                loader.style.opacity = '0';
+                setTimeout(() => loader.style.display = 'none', 500);
+            }
+        }
+    </script>
+</body>
+</html>
